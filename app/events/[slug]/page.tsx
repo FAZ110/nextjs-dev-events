@@ -44,19 +44,34 @@ const EventDetailsPage = async ({params}: {params: Promise<{slug: string}>}) => 
     'use cache'
     cacheLife('hours')
     const {slug} = await params;
-    const request = await fetch(`${BASE_URL}/api/events/${slug}`);
-    const {event: {description, image, overview, date, time, location, mode, agenda, audience, tags, organizer}} = await request.json();
+    
+    // Fetch event from API
+    const request = await fetch(`${BASE_URL}/api/events/${slug}`, {
+        cache: 'no-store' // Prevent stale data
+    });
+    
+    if (!request.ok) {
+        return notFound();
+    }
+    
+    const response = await request.json();
+    const event = response.event;
 
-    if(!description) return notFound();
+    // Check if event exists and has required fields
+    if (!event || !event.description) {
+        return notFound();
+    }
+
+    const {description, image, overview, date, time, location, mode, agenda, audience, tags, organizer, title} = event;
 
     const bookings = 10;
 
     const similarEvents: IEvent[] = await getSimilarEventsBySlug(slug); 
-    console.log(similarEvents)
+    // console.log(similarEvents)
     return(
         <section id="event">
             <div className="header">
-                <h1>Event Decription</h1>
+                <h1>Event Description</h1>
                 <p>{description}</p>
             </div>
             <div className="details">
@@ -102,7 +117,7 @@ const EventDetailsPage = async ({params}: {params: Promise<{slug: string}>}) => 
                             <p className="text-sm">Be the first to book your spot!</p>
                         )}
 
-                        <BookEvent/>
+                        <BookEvent eventId = {event._id} slug ={event.slug}/>
                     </div>
                 </aside>
             </div>
