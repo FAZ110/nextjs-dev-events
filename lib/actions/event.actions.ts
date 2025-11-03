@@ -7,12 +7,26 @@ export const getSimilarEventsBySlug = async (slug: string) => {
     try {
         await connectDB();
 
-        const event = await Event.findOne({slug})
-        return await Event.find({ _id: {$ne: event._id}, tags: {$in: event.tags}}).lean();
+        const event = await Event.findOne({slug});
         
-    
-    } catch {
-        return []
+        if (!event) {
+            console.log(`Event with slug "${slug}" not found`);
+            return [];
+        }
+
+        const similarEvents = await Event.find({ 
+            _id: {$ne: event._id}, 
+            tags: {$in: event.tags}
+        })
+        .limit(3) 
+        .lean();
+
+        console.log(`Found ${similarEvents.length} similar events for slug "${slug}"`);
         
+        return similarEvents;
+        
+    } catch (error) {
+        console.error('Error fetching similar events:', error);
+        return [];
     }
 }
